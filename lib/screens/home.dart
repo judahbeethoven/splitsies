@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:splitsies/models/balance.dart';
 import 'package:splitsies/models/expense.dart';
 import 'package:splitsies/scrapbook_theme/highlight.dart';
 import 'package:splitsies/scrapbook_theme/paper.dart';
@@ -31,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
+          duration: const Duration(seconds: 4),
           content: Text(
             'Deleted "${expense.description}"',
             style: ScrapbookStyles.body(color: Colors.white),
@@ -93,6 +93,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 20),
                   _totalCard(total, totalSelf),
                   const SizedBox(height: 28),
+                  _sectionLabel('standings', ScrapbookColors.washiBlue),
+                  const SizedBox(height: 14),
+                  _standingsCard(expenses),
+                  // const SizedBox(height: 14),
                   _sectionLabel('activity', ScrapbookColors.washiYellow),
                   const SizedBox(height: 14),
                   _activityLog(expenses, total, expenses.length),
@@ -202,6 +206,127 @@ class _HomeScreenState extends State<HomeScreen> {
         Text(value, style: ScrapbookStyles.marker(size: 20)),
         Text(label, style: ScrapbookStyles.typewriter(size: 10)),
       ],
+    );
+  }
+
+  Widget _standingsCard(List<Expense> expenses) {
+    if (expenses.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final standings = SplitCalculator.userFinancialStandings(expenses);
+    final sorted = standings.entries.toList()
+      ..sort(
+        (a, b) => (b.value['netBalance'] as double).compareTo(
+          a.value['netBalance'] as double,
+        ),
+      );
+
+    final wobbles = [-0.04, 0.03, -0.02, 0.045, -0.03, 0.02];
+    final tapeColors = [
+      ScrapbookColors.washiPink,
+      ScrapbookColors.washiMint,
+      ScrapbookColors.washiSky,
+      ScrapbookColors.washiPeach,
+      ScrapbookColors.washiLilac,
+    ];
+    final tapePatterns = [
+      WashiPattern.diagonal,
+      WashiPattern.dots,
+      WashiPattern.grid,
+      WashiPattern.chevron,
+    ];
+
+    return SizedBox(
+      height: 190,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        itemCount: sorted.length,
+        itemBuilder: (context, index) {
+          final entry = sorted[index];
+          return Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: _standingCard(
+              entry.value['name'] as String,
+              entry.value['share'] as double,
+              entry.value['netBalance'] as double,
+              rotation: wobbles[index % wobbles.length],
+              seed: 50 + index,
+              tapeColor: tapeColors[index % tapeColors.length],
+              tapePattern: tapePatterns[index % tapePatterns.length],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _standingCard(
+    String name,
+    double share,
+    double netBalance, {
+    double rotation = 0,
+    int seed = 1,
+    Color tapeColor = ScrapbookColors.washiPink,
+    WashiPattern tapePattern = WashiPattern.diagonal,
+  }) {
+    final statusColor = ScrapbookColors.owedGreen;
+
+    return SizedBox(
+      width: 148,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          TornPaper(
+            color: ScrapbookColors.receiptWhite,
+            rotation: rotation,
+            seed: seed,
+            padding: const EdgeInsets.fromLTRB(12, 20, 12, 12),
+            child: SizedBox(
+              width: 118,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: ScrapbookStyles.handwriting(size: 22),
+                  ),
+                  const SizedBox(height: 2),
+                  Container(
+                    height: 1,
+                    color: ScrapbookColors.inkBrown.withValues(alpha: 0.2),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'contributed',
+                    style: ScrapbookStyles.typewriter(size: 9),
+                  ),
+                  Text(
+                    '₹${share.toStringAsFixed(0)}',
+                    style: ScrapbookStyles.marker(size: 20, color: statusColor),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: -10,
+            child: WashiTape(
+              color: tapeColor,
+              pattern: tapePattern,
+              width: 54,
+              height: 20,
+              rotation: rotation * -2,
+              seed: seed,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

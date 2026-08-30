@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:splitsies/models/expense.dart';
-import 'package:splitsies/scrapbook_theme/highlight.dart';
 import 'package:splitsies/scrapbook_theme/paper.dart';
 import 'package:splitsies/scrapbook_theme/styles.dart';
 import 'package:splitsies/scrapbook_theme/tape.dart';
 import 'package:splitsies/scrapbook_theme/torn_note.dart';
-import 'package:splitsies/screens/qr_scanner_screen.dart';
 import 'package:splitsies/services/expense_service.dart';
 import 'package:splitsies/services/service_locator.dart';
-import 'package:splitsies/services/upi_service.dart';
 import 'package:splitsies/services/user_settings_service.dart';
 import 'package:splitsies/widgets/category.dart';
 import 'package:splitsies/widgets/pay_qr_sheet.dart';
@@ -178,7 +175,6 @@ class ExpenseDetailScreen extends StatelessWidget {
   );
 
   Widget _payerRow(BuildContext context, Expense expense) {
-    final isSelf = expense.payer == 'You';
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -204,41 +200,9 @@ class ExpenseDetailScreen extends StatelessWidget {
               ],
             ),
           ),
-          if (isSelf)
-            IconButton(
-              tooltip: "scan vendor's QR",
-              icon: const Icon(Icons.qr_code_scanner_rounded),
-              color: ScrapbookColors.inkBrown,
-              onPressed: () => _scanVendor(context),
-            ),
         ],
       ),
     );
-  }
-
-  Future<void> _scanVendor(BuildContext context) async {
-    final scanned = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(builder: (_) => const QrScannerScreen()),
-    );
-    if (scanned == null || !context.mounted) return;
-
-    if (!UpiService.looksLikeUpiUri(scanned)) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text("That doesn't look like a UPI QR")),
-        );
-      return;
-    }
-    final opened = await UpiService.launch(scanned);
-    if (!opened && context.mounted) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text('Could not open a UPI app')),
-        );
-    }
   }
 
   Widget _owerRow(BuildContext context, Expense expense, String person) {

@@ -59,4 +59,43 @@ class SplitCalculator {
       (i, expense) => i + expense.amount / expense.participants.length,
     );
   }
+
+  /// Calculate financial standing for each user
+  static Map<String, Map<String, dynamic>> userFinancialStandings(
+    List<Expense> expenses,
+  ) {
+    final standings = <String, Map<String, dynamic>>{};
+    final contributed = <String, double>{};
+    final shared = <String, double>{};
+
+    for (final expense in expenses) {
+      for (final participant in expense.participants) {
+        contributed.putIfAbsent(participant, () => 0.0);
+        shared.putIfAbsent(participant, () => 0.0);
+      }
+
+      contributed[expense.payer] = (contributed[expense.payer] ?? 0.0) + expense.amount;
+
+      final sharePerPerson = expense.amount / expense.participants.length;
+      for (final participant in expense.participants) {
+        shared[participant] = (shared[participant] ?? 0.0) + sharePerPerson;
+      }
+    }
+
+    final allPeople = <String>{...contributed.keys, ...shared.keys}.toList();
+    for (final person in allPeople) {
+      final totalContributed = contributed[person] ?? 0.0;
+      final totalShare = shared[person] ?? 0.0;
+      final netBalance = totalContributed - totalShare;
+
+      standings[person] = {
+        'name': person,
+        'contributed': totalContributed,
+        'share': totalShare,
+        'netBalance': netBalance,
+      };
+    }
+
+    return standings;
+  }
 }

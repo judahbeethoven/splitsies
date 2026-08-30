@@ -67,9 +67,14 @@ class ScrapbookStyles {
         color: color ?? ScrapbookColors.inkBlack,
       );
 
-  static TextStyle body({double size = 14, Color? color}) => GoogleFonts.lora(
+  static TextStyle body({
+    double size = 14,
+    Color? color,
+    FontWeight weight = FontWeight.w400,
+  }) => GoogleFonts.lora(
     fontSize: size,
     color: color ?? ScrapbookColors.inkBlack,
+    fontWeight: weight,
     height: 1.5,
   );
 }
