@@ -59,17 +59,4 @@ class SplitCalculator {
       (i, expense) => i + expense.amount / expense.participants.length,
     );
   }
-
-  /// A minimal-ish set of transfers that clears every balance.
-  ///
-  /// Greedy: repeatedly send money from the person who owes the most to the
-  /// person who is owed the most. Not provably optimal, but close and cheap,
-  /// and it never produces more than `people − 1` transfers.
-  static List<Settlement> settleUp(
-    List<Expense> expenses, {
-    String selfName = 'You',
-  }) {
-    // TODO: Implement settlement calculation
-    throw UnimplementedError();
-  }
 }

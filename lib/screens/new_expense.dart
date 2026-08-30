@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:splitsies/scrapbook_theme/highlight.dart';
 import 'package:uuid/uuid.dart';
 import 'package:splitsies/models/expense.dart';
 import 'package:splitsies/scrapbook_theme/paper.dart';
@@ -12,9 +15,8 @@ import 'package:splitsies/services/expense_validators.dart';
 import 'package:splitsies/services/user_settings_service.dart';
 import 'package:splitsies/widgets/category.dart';
 import 'package:splitsies/widgets/scrap_button.dart';
+import 'package:splitsies/widgets/upi_settings_dialog.dart';
 
-/// Add-expense form. Collects + sanitises input, builds an [Expense], and
-/// hands it to [ExpenseService] (which runs the equal split and persists).
 class NewExpense extends StatefulWidget {
   const NewExpense({super.key});
 
@@ -29,19 +31,19 @@ class _NewExpenseState extends State<NewExpense> {
   final _descCtrl = TextEditingController();
   final _amountCtrl = TextEditingController();
   final _personCtrl = TextEditingController();
-  final _upiCtrl = TextEditingController();
 
   final List<String> _participants = [_selfName];
   ExpenseCategory _category = ExpenseCategory.food;
-  // Only you can be the payer — there's no picker for this any more.
   final String _paidBy = _selfName;
   String? _participantError;
+
+  late final int _pageSeed;
 
   @override
   void initState() {
     super.initState();
+    _pageSeed = Random().nextInt(1 << 32);
     _amountCtrl.addListener(() => setState(() {}));
-    _upiCtrl.text = getIt<UserSettingsService>().upiId;
   }
 
   @override
@@ -49,7 +51,6 @@ class _NewExpenseState extends State<NewExpense> {
     _descCtrl.dispose();
     _amountCtrl.dispose();
     _personCtrl.dispose();
-    _upiCtrl.dispose();
     super.dispose();
   }
 
@@ -74,12 +75,11 @@ class _NewExpenseState extends State<NewExpense> {
   }
 
   void _removePerson(String name) {
-    // You have to stay in your own split — you're always the payer.
     if (name == _selfName) return;
     setState(() => _participants.remove(name));
   }
 
-  void _save() {
+  Future<void> _save() async {
     final formOk = _formKey.currentState?.validate() ?? false;
     final peopleError =
         ExpenseValidators.participants(_participants) ??
@@ -87,7 +87,12 @@ class _NewExpenseState extends State<NewExpense> {
     setState(() => _participantError = peopleError);
     if (!formOk || peopleError != null) return;
 
-    getIt<UserSettingsService>().setUpiId(_upiCtrl.text);
+    final settings = getIt<UserSettingsService>();
+    if (!settings.hasUpiId) {
+      await showUpiSettingsDialog(context);
+
+      if (!settings.hasUpiId) return;
+    }
 
     final expense = Expense(
       id: const Uuid().v4(),
@@ -99,7 +104,7 @@ class _NewExpenseState extends State<NewExpense> {
       createdAt: DateTime.now(),
     );
     getIt<ExpenseService>().addExpense(expense);
-    Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -123,6 +128,7 @@ class _NewExpenseState extends State<NewExpense> {
                     children: [
                       _label('what was it for?'),
                       _paperField(
+                        seed: 1,
                         child: TextFormField(
                           controller: _descCtrl,
                           textCapitalization: TextCapitalization.sentences,
@@ -134,6 +140,7 @@ class _NewExpenseState extends State<NewExpense> {
                       const SizedBox(height: 20),
                       _label('how much?'),
                       _paperField(
+                        seed: 2,
                         child: TextFormField(
                           controller: _amountCtrl,
                           keyboardType: const TextInputType.numberWithOptions(
@@ -171,29 +178,6 @@ class _NewExpenseState extends State<NewExpense> {
                         ),
                       ],
                       const SizedBox(height: 24),
-                      _label('paid by'),
-                      const SizedBox(height: 4),
-                      Text(
-                        'you — only you can log an expense you paid for',
-                        style: ScrapbookStyles.typewriter(size: 11),
-                      ),
-                      const SizedBox(height: 24),
-                      _label('your UPI ID'),
-                      const SizedBox(height: 2),
-                      Text(
-                        'so the others can QR-pay you back',
-                        style: ScrapbookStyles.typewriter(size: 11),
-                      ),
-                      const SizedBox(height: 6),
-                      _paperField(
-                        child: TextFormField(
-                          controller: _upiCtrl,
-                          style: ScrapbookStyles.body(size: 15),
-                          decoration: _fieldDeco('yourname@bank'),
-                          validator: ExpenseValidators.upiId,
-                        ),
-                      ),
-                      const SizedBox(height: 26),
                       _splitPreview(),
                       const SizedBox(height: 28),
                       Center(
@@ -257,26 +241,70 @@ class _NewExpenseState extends State<NewExpense> {
     );
   }
 
-  Widget _label(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 6),
-    child: Text(text, style: ScrapbookStyles.marker(size: 16)),
-  );
-
-  Widget _paperField({required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-      decoration: BoxDecoration(
-        color: ScrapbookColors.receiptWhite,
-        borderRadius: BorderRadius.circular(3),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 4,
-            offset: const Offset(1, 2),
-          ),
-        ],
+  Widget _label(String text) {
+    final rnd = Random(_pageSeed ^ text.hashCode);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Highlight(
+        overshoot: 0,
+        rotation: ((rnd.nextDouble() * 12) - 6) / 100,
+        color: ScrapbookColors.washiPink,
+        coverage: 50,
+        child: Text(
+          text,
+          style: ScrapbookStyles.typewriter(
+            size: 16,
+          ).copyWith(fontWeight: FontWeight.w900),
+        ),
       ),
-      child: child,
+    );
+  }
+
+  Widget _paperField({required Widget child, int seed = 0}) {
+    final rnd = Random(_pageSeed ^ seed);
+    final colors = [
+      ScrapbookColors.washiBlue,
+      ScrapbookColors.washiCoral,
+      ScrapbookColors.washiLilac,
+      ScrapbookColors.washiPink,
+      ScrapbookColors.washiPeach,
+    ];
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+          decoration: BoxDecoration(
+            color: ScrapbookColors.indexCard,
+            borderRadius: BorderRadius.circular(3),
+            border: Border.all(color: ScrapbookColors.inkBlack.withAlpha(100)),
+          ),
+          child: child,
+        ),
+        Positioned(
+          left: -5,
+          child: WashiTape(
+            color: colors[rnd.nextInt(colors.length)],
+            pattern: WashiPattern.grid,
+            rotation: -pi / 4,
+            width: 20,
+            height: 10,
+            hasShadow: false,
+          ),
+        ),
+        Positioned(
+          right: -5,
+          bottom: 0,
+          child: WashiTape(
+            color: colors[rnd.nextInt(colors.length)],
+            pattern: WashiPattern.grid,
+            rotation: -pi / 4,
+            width: 20,
+            height: 10,
+            hasShadow: false,
+          ),
+        ),
+      ],
     );
   }
 
@@ -341,6 +369,7 @@ class _NewExpenseState extends State<NewExpense> {
           children: [
             Expanded(
               child: _paperField(
+                seed: 3,
                 child: TextField(
                   controller: _personCtrl,
                   textCapitalization: TextCapitalization.words,
@@ -351,13 +380,14 @@ class _NewExpenseState extends State<NewExpense> {
               ),
             ),
             const SizedBox(width: 10),
-            ScrapButton(
-              label: 'add',
-              dense: true,
-              color: ScrapbookColors.stickyYellow,
-              tapeColor: ScrapbookColors.washiPink,
-              seed: 15,
-              onPressed: _addPerson,
+            Highlight(
+              padding: EdgeInsetsGeometry.zero,
+              overshoot: 0,
+              child: IconButton(
+                onPressed: _addPerson,
+                icon: Icon(Icons.add),
+                padding: EdgeInsets.zero,
+              ),
             ),
           ],
         ),
@@ -367,11 +397,11 @@ class _NewExpenseState extends State<NewExpense> {
 
   Widget _splitPreview() {
     final each = _previewSplit;
+    if (each == null) return Container();
     return Center(
       child: TornNote(
-        text: each == null
-            ? 'enter an amount to see the split'
-            : '≈ ₹${each.toStringAsFixed(2)} each\n${_participants.length} people, split equally',
+        text:
+            '≈ ₹${each.toStringAsFixed(2)} each\n${_participants.length} people, split equally',
         color: ScrapbookColors.indexCard,
         font: NoteFont.typewriter,
         fontSize: 13,
@@ -382,7 +412,6 @@ class _NewExpenseState extends State<NewExpense> {
   }
 }
 
-/// Selectable washi-tape swatch used by the category picker.
 class _WashiChip extends StatelessWidget {
   final bool selected;
   final Color color;

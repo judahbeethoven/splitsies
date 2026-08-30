@@ -1,6 +1,5 @@
-enum ExpenseCategory { autoRide, subscription, food, printout, other }
+enum ExpenseCategory { travel, food, outing, supplies, subscription, other }
 
-/// How far a group has gotten paying an expense back.
 enum SettleStatus { none, partial, all }
 
 class Expense {
@@ -12,10 +11,6 @@ class Expense {
   final String payer;
   final DateTime createdAt;
 
-  /// Per-participant "have they paid the payer back" flag. Keyed by name;
-  /// a missing entry means "no" (except the payer, who is trivially settled
-  /// — they fronted the money). Use [isPaidBy] rather than reading this map
-  /// directly so that default applies consistently.
   final Map<String, bool> paidStatus;
 
   Expense({
@@ -38,7 +33,6 @@ class Expense {
 
   double get nominalShare => amount / participants.length;
 
-  /// Everyone who owes the payer for this expense (i.e. everyone but them).
   List<String> get owers =>
       participants.where((p) => p != payer).toList(growable: false);
 
@@ -50,7 +44,6 @@ class Expense {
 
   bool get nonePaid => owers.every((p) => !isPaidBy(p));
 
-  /// Red/yellow/green summary used for the activity-log indicator.
   SettleStatus get settleStatus {
     if (owers.isEmpty || allSettled) return SettleStatus.all;
     if (nonePaid) return SettleStatus.none;

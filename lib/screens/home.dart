@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:splitsies/models/balance.dart';
 import 'package:splitsies/models/expense.dart';
+import 'package:splitsies/scrapbook_theme/highlight.dart';
 import 'package:splitsies/scrapbook_theme/paper.dart';
 import 'package:splitsies/scrapbook_theme/styles.dart';
 import 'package:splitsies/scrapbook_theme/tape.dart';
@@ -10,7 +11,6 @@ import 'package:splitsies/screens/new_expense.dart';
 import 'package:splitsies/services/service_locator.dart';
 import 'package:splitsies/services/expense_service.dart';
 import 'package:splitsies/services/split_calculator.dart';
-import 'package:splitsies/widgets/balance_card.dart';
 import 'package:splitsies/widgets/expense_item.dart';
 import 'package:splitsies/widgets/scrap_button.dart';
 import 'package:splitsies/widgets/upi_settings_dialog.dart';
@@ -94,13 +94,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   _totalCard(total, totalSelf),
                   const SizedBox(height: 28),
                   _sectionLabel('activity', ScrapbookColors.washiYellow),
-                  if (expenses.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      'swipe a slip away to delete it',
-                      style: ScrapbookStyles.typewriter(size: 10),
-                    ),
-                  ],
                   const SizedBox(height: 14),
                   _activityLog(expenses, total, expenses.length),
                 ],
@@ -118,8 +111,11 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
           children: [
             Flexible(
+              flex: 2,
               child: Text(
                 'Splitsies',
                 maxLines: 1,
@@ -127,24 +123,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: ScrapbookStyles.title(size: 46),
               ),
             ),
-            const SizedBox(width: 10),
-            Padding(
-              padding: const EdgeInsets.only(top: 14),
-              child: WashiTape(
-                color: ScrapbookColors.washiCoral,
-                pattern: WashiPattern.chevron,
-                width: 74,
-                height: 22,
-                rotation: 0.14,
-                seed: 5,
+            Spacer(),
+            Highlight(
+              coverage: 100,
+              overshoot: 0,
+              rotation: 0.05,
+              color: ScrapbookColors.washiBlue,
+              child: IconButton(
+                onPressed: () => showUpiSettingsDialog(context),
+                icon: const Icon(Icons.qr_code_2_rounded, size: 28),
+                color: ScrapbookColors.inkBlack,
+                tooltip: 'your UPI details',
               ),
-            ),
-            const Spacer(),
-            IconButton(
-              onPressed: () => showUpiSettingsDialog(context),
-              icon: const Icon(Icons.qr_code_2_rounded),
-              color: ScrapbookColors.inkBrown,
-              tooltip: 'your UPI details',
             ),
           ],
         ),
@@ -156,6 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _totalCard(double total, double totalSelf) {
     return Stack(
       clipBehavior: Clip.none,
+      alignment: AlignmentGeometry.topCenter,
       children: [
         TornPaper(
           color: ScrapbookColors.receiptWhite,
@@ -189,13 +180,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         Positioned(
-          top: -12,
-          right: 24,
+          top: -18,
+          // right: 24,
           child: WashiTape(
             color: ScrapbookColors.washiYellow,
             pattern: WashiPattern.grid,
             width: 96,
-            height: 26,
+            height: 32,
             rotation: -0.1,
             seed: 12,
           ),
@@ -229,33 +220,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _balancesStrip(List<Balance> balances) {
-    return SizedBox(
-      height: 210,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        clipBehavior: Clip.none,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: balances.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 14),
-        itemBuilder: (_, i) {
-          final b = balances[i];
-          return BalanceCard(
-            name: b.person,
-            net: b.net,
-            isYou: b.person == 'You',
-            rotation: i.isEven ? -0.035 : 0.03,
-            seed: 20 + i,
-          );
-        },
-      ),
-    );
-  }
-
   Widget _activityLog(List<Expense> expenses, double total, int slips) {
     if (expenses.isEmpty) {
       return TornNote(
-        text: 'nothing logged yet —\ntap "add expense" to start the ledger',
+        text: 'go touch some grass vro 😭✌️',
         color: ScrapbookColors.stickyYellow,
         font: NoteFont.handwriting,
         rotation: -0.02,

@@ -13,6 +13,8 @@ class TornPaper extends StatelessWidget {
   final bool shadow;
   final double? width;
   final double? height;
+  final bool hasInner;
+  final bool hasCrease;
 
   const TornPaper({
     super.key,
@@ -26,6 +28,8 @@ class TornPaper extends StatelessWidget {
     this.shadow = true,
     this.width,
     this.height,
+    this.hasInner = true,
+    this.hasCrease = true,
   });
 
   @override
@@ -37,6 +41,8 @@ class TornPaper extends StatelessWidget {
         tornDepth: tornDepth,
         seed: seed,
         shadow: shadow,
+        hasCrease: hasCrease,
+        hasInner: hasInner,
       ),
       child: child == null
           ? SizedBox(width: width, height: height)
@@ -52,6 +58,8 @@ class TornPaperPainter extends CustomPainter {
   final double tornDepth;
   final int seed;
   final bool shadow;
+  final bool hasInner;
+  final bool hasCrease;
 
   TornPaperPainter({
     required this.color,
@@ -59,6 +67,8 @@ class TornPaperPainter extends CustomPainter {
     required this.tornDepth,
     required this.seed,
     required this.shadow,
+    required this.hasInner,
+    required this.hasCrease,
   });
 
   @override
@@ -84,18 +94,20 @@ class TornPaperPainter extends CustomPainter {
       canvas.restore();
     }
 
-    // frayed fiber fringe peeking out around the edges
     canvas.drawPath(outer, Paint()..color = edgeColor);
-    // main sheet
-    canvas.drawPath(inner, Paint()..color = color);
-    // crease shading just inside the tear
-    canvas.drawPath(
-      inner,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2
-        ..color = Colors.black.withValues(alpha: 0.06),
-    );
+    if (hasInner) {
+      canvas.drawPath(inner, Paint()..color = color);
+    }
+
+    if (hasCrease) {
+      canvas.drawPath(
+        inner,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2
+          ..color = Colors.black.withValues(alpha: 0.06),
+      );
+    }
   }
 
   Path _tornRectPath(

@@ -2,41 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:splitsies/models/expense.dart';
 import 'package:splitsies/scrapbook_theme/styles.dart';
 
-/// Re-export so existing UI imports of `widgets/category.dart` keep working;
-/// the canonical enum lives on the model.
 export 'package:splitsies/models/expense.dart' show ExpenseCategory;
 
-/// Presentation for each [ExpenseCategory] — label, icon, washi colour.
-/// Kept out of the model so the domain layer stays Flutter-free.
 extension ExpenseCategoryStyle on ExpenseCategory {
   String get label => switch (this) {
-    ExpenseCategory.autoRide => 'Auto ride',
+    ExpenseCategory.travel => 'Travel',
     ExpenseCategory.subscription => 'Subscription',
     ExpenseCategory.food => 'Food',
-    ExpenseCategory.printout => 'Printout',
+    ExpenseCategory.supplies => 'Supplies',
     ExpenseCategory.other => 'Other',
+    ExpenseCategory.outing => 'Outing',
   };
 
   IconData get icon => switch (this) {
-    ExpenseCategory.autoRide => Icons.local_taxi_rounded,
+    ExpenseCategory.travel => Icons.local_taxi_rounded,
     ExpenseCategory.subscription => Icons.subscriptions_rounded,
     ExpenseCategory.food => Icons.restaurant_rounded,
-    ExpenseCategory.printout => Icons.print_rounded,
+    ExpenseCategory.supplies => Icons.print_rounded,
     ExpenseCategory.other => Icons.receipt_long_rounded,
+    ExpenseCategory.outing => Icons.forest,
   };
 
-  /// Washi tint used behind the category's icon stamp.
   Color get color => switch (this) {
-    ExpenseCategory.autoRide => ScrapbookColors.washiYellow,
+    ExpenseCategory.travel => ScrapbookColors.washiYellow,
     ExpenseCategory.subscription => ScrapbookColors.washiLilac,
     ExpenseCategory.food => ScrapbookColors.washiCoral,
-    ExpenseCategory.printout => ScrapbookColors.washiSky,
+    ExpenseCategory.supplies => ScrapbookColors.washiSky,
     ExpenseCategory.other => ScrapbookColors.washiSage,
+    ExpenseCategory.outing => const Color.fromARGB(255, 233, 133, 161),
   };
 }
 
-/// A little rubber-stamp square with the category icon — used in list rows
-/// and as the leading glyph on the form.
 class CategoryStamp extends StatelessWidget {
   final ExpenseCategory category;
   final double size;

@@ -5,12 +5,6 @@ import 'package:splitsies/scrapbook_theme/styles.dart';
 import 'package:splitsies/scrapbook_theme/torn_note.dart';
 import 'package:splitsies/widgets/category.dart';
 
-/// One line in the activity log — a taped-in receipt scrap.
-///
-/// Everything here is display only. The parent list owns the swipe-to-delete
-/// (`Dismissible`) and hands back an [onDelete] purely so the trailing bin
-/// icon has something to call; real removal goes through the expense service.
-/// Tapping the slip itself (via [onTap]) opens the per-person pay/settle view.
 class ExpenseItem extends StatelessWidget {
   final Expense expense;
   final VoidCallback? onTap;
@@ -57,7 +51,10 @@ class ExpenseItem extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              CategoryStamp(category: expense.category, rotation: -0.05 + rotation),
+              CategoryStamp(
+                category: expense.category,
+                rotation: -0.05 + rotation,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -71,7 +68,7 @@ class ExpenseItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${expense.payer} paid · split ${expense.participants.length} ways',
+                      'split ${expense.participants.length} ways',
                       style: ScrapbookStyles.typewriter(size: 11),
                     ),
                     Text(stamp, style: ScrapbookStyles.typewriter(size: 10)),

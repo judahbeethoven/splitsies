@@ -1,13 +1,6 @@
 import 'package:url_launcher/url_launcher.dart';
 
-/// Builds and fires UPI deep links (`upi://pay?...`). Stateless — just a
-/// couple of static helpers around the standard UPI intent spec.
 class UpiService {
-  const UpiService._();
-
-  /// A `upi://pay` URI a UPI app can open directly to pay [vpa] the exact
-  /// [amount]. This is what gets encoded into the QR each ower scans, and
-  /// what "open UPI app" launches straight from the same device.
   static String buildPayUri({
     required String vpa,
     required String payeeName,
@@ -30,8 +23,6 @@ class UpiService {
   static bool looksLikeUpiUri(String value) =>
       value.trim().toLowerCase().startsWith('upi://');
 
-  /// Opens [upiUri] in whatever UPI app the phone has. Returns false if
-  /// nothing on the device can handle it.
   static Future<bool> launch(String upiUri) async {
     final uri = Uri.tryParse(upiUri);
     if (uri == null) return false;

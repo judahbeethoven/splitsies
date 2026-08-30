@@ -1,9 +1,6 @@
 import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Your own payment details, set once and reused for every expense you pay
-/// for — since only you can be the payer, there's only ever one UPI ID
-/// this app needs to know about.
 class UserSettingsService {
   static const _upiKey = 'settings_upi_id';
   static const _nameKey = 'settings_display_name';

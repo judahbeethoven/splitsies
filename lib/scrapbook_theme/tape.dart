@@ -13,6 +13,7 @@ class WashiTape extends StatelessWidget {
   final double rotation;
   final double opacity;
   final int seed;
+  final bool hasShadow;
 
   const WashiTape({
     super.key,
@@ -24,6 +25,7 @@ class WashiTape extends StatelessWidget {
     this.rotation = -0.05,
     this.opacity = 0.85,
     this.seed = 1,
+    this.hasShadow = true,
   });
 
   @override
@@ -38,6 +40,7 @@ class WashiTape extends StatelessWidget {
           pattern: pattern,
           opacity: opacity,
           seed: seed,
+          hasShadow: hasShadow,
         ),
       ),
     );
@@ -50,6 +53,7 @@ class WashiTapePainter extends CustomPainter {
   final WashiPattern pattern;
   final double opacity;
   final int seed;
+  final bool hasShadow;
 
   WashiTapePainter({
     required this.color,
@@ -57,6 +61,7 @@ class WashiTapePainter extends CustomPainter {
     required this.pattern,
     required this.opacity,
     required this.seed,
+    required this.hasShadow,
   });
 
   @override
@@ -64,16 +69,17 @@ class WashiTapePainter extends CustomPainter {
     final rnd = Random(seed * 9301 + 49297);
     final tapePath = _tornEndsPath(size, rnd);
 
-    // soft drop shadow following the torn silhouette
-    canvas.save();
-    canvas.translate(1.5, 2);
-    canvas.drawPath(
-      tapePath,
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.15)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-    );
-    canvas.restore();
+    if (hasShadow) {
+      canvas.save();
+      canvas.translate(1.5, 2);
+      canvas.drawPath(
+        tapePath,
+        Paint()
+          ..color = Colors.black.withValues(alpha: 0.15)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+      );
+      canvas.restore();
+    }
 
     canvas.save();
     canvas.clipPath(tapePath);

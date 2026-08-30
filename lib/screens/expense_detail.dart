@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:splitsies/models/expense.dart';
+import 'package:splitsies/scrapbook_theme/highlight.dart';
 import 'package:splitsies/scrapbook_theme/paper.dart';
 import 'package:splitsies/scrapbook_theme/styles.dart';
 import 'package:splitsies/scrapbook_theme/tape.dart';
@@ -12,8 +13,6 @@ import 'package:splitsies/services/user_settings_service.dart';
 import 'package:splitsies/widgets/category.dart';
 import 'package:splitsies/widgets/pay_qr_sheet.dart';
 
-/// Who owes what on one expense, and the tap-to-settle / QR-to-pay flow for
-/// clearing it. Pushed when an [ExpenseItem] on the home screen is tapped.
 class ExpenseDetailScreen extends StatelessWidget {
   final String expenseId;
 
@@ -25,6 +24,14 @@ class ExpenseDetailScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: ScrapbookColors.creamPaper,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: _topBar(context),
+        iconTheme: IconThemeData(color: ScrapbookColors.inkBrown),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        forceMaterialTransparency: true,
+      ),
       body: TexturedPaper(
         baseColor: ScrapbookColors.creamPaper,
         roughness: 0,
@@ -55,142 +62,111 @@ class ExpenseDetailScreen extends StatelessWidget {
   }
 
   Widget _body(BuildContext context, Expense expense) {
-    return ListView(
+    return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-      children: [
-        _topBar(context),
-        const SizedBox(height: 4),
-        _summaryCard(expense),
-        const SizedBox(height: 18),
-        _statusBanner(expense),
-        const SizedBox(height: 22),
-        _sectionLabel('paid the vendor'),
-        const SizedBox(height: 10),
-        _payerRow(context, expense),
-        const SizedBox(height: 22),
-        if (expense.owers.isNotEmpty) ...[
-          _sectionLabel('owes ${expense.payer}'),
-          const SizedBox(height: 6),
-          Text(
-            'tap a name once they\'ve paid you back',
-            style: ScrapbookStyles.typewriter(size: 10),
-          ),
-          const SizedBox(height: 10),
-          for (final person in expense.owers)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _owerRow(context, expense, person),
-            ),
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          _summaryCard(expense),
+          const SizedBox(height: 32),
+          Expanded(child: _payments(context, expense)),
         ],
+      ),
+    );
+  }
+
+  Widget _payments(BuildContext context, Expense expense) {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: AlignmentGeometry.topCenter,
+      children: [
+        TornPaper(
+          hasInner: false,
+          hasCrease: false,
+          padding: EdgeInsetsGeometry.all(12),
+          child: SingleChildScrollView(
+            physics: BouncingScrollPhysics(),
+            child: Column(
+              spacing: 2.0,
+              children: [
+                const SizedBox(height: 10),
+                _sectionLabel("Payments"),
+                const SizedBox(height: 10),
+                _payerRow(context, expense),
+
+                if (expense.owers.isNotEmpty) ...[
+                  // const SizedBox(height: 10),
+                  for (final person in expense.owers)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 0),
+                      child: _owerRow(context, expense, person),
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          top: -16,
+          child: WashiTape(
+            color: ScrapbookColors.washiLilac,
+            pattern: WashiPattern.diagonal,
+            // width: 90,
+            // height: 30,
+            rotation: -0.1,
+            seed: 62,
+            hasShadow: false,
+          ),
+        ),
       ],
     );
   }
 
   Widget _topBar(BuildContext context) {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () => Navigator.maybePop(context),
-          icon: const Icon(Icons.arrow_back_rounded),
-          color: ScrapbookColors.inkBrown,
-          tooltip: 'Back',
-        ),
-        Expanded(
-          child: Text(
-            'the slip',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: ScrapbookStyles.title(size: 34),
-          ),
-        ),
-      ],
+    return Text(
+      'the slip',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: ScrapbookStyles.title(size: 34),
     );
   }
 
   Widget _summaryCard(Expense expense) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        TornPaper(
-          color: ScrapbookColors.receiptWhite,
-          rotation: -0.006,
-          seed: 61,
-          padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CategoryStamp(category: expense.category),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      expense.description,
-                      style: ScrapbookStyles.handwriting(size: 22),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${expense.payer} paid · split ${expense.participants.length} ways',
-                      style: ScrapbookStyles.typewriter(size: 11),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                '₹${expense.amount.toStringAsFixed(2)}',
-                style: ScrapbookStyles.marker(size: 20),
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          top: -10,
-          left: 20,
-          child: WashiTape(
-            color: ScrapbookColors.washiMint,
-            pattern: WashiPattern.dots,
-            width: 70,
-            height: 20,
-            rotation: -0.1,
-            seed: 62,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _statusBanner(Expense expense) {
-    final (Color color, String label, IconData icon) = switch (expense
-        .settleStatus) {
-      SettleStatus.all => (
-        ScrapbookColors.owedGreen,
-        'all settled up',
-        Icons.check_circle_rounded,
-      ),
-      SettleStatus.partial => (
-        ScrapbookColors.darkKraft,
-        '${expense.paidOwerCount}/${expense.owers.length} paid back',
-        Icons.hourglass_bottom_rounded,
-      ),
-      SettleStatus.none => (
-        ScrapbookColors.oweRed,
-        'nobody has paid back yet',
-        Icons.error_outline_rounded,
-      ),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-      ),
+    return TornPaper(
+      color: ScrapbookColors.receiptWhite,
+      shadow: false,
+      tornDepth: 1,
+      rotation: -0.006,
+      seed: 61,
+      edgeColor: expense.allSettled
+          ? ScrapbookColors.owedGreen
+          : ScrapbookColors.oweRed,
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 18),
-          const SizedBox(width: 8),
-          Text(label, style: ScrapbookStyles.marker(size: 13, color: color)),
+          CategoryStamp(category: expense.category),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  expense.description,
+                  style: ScrapbookStyles.handwriting(size: 22),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'split ${expense.participants.length} ways',
+                  style: ScrapbookStyles.typewriter(size: 11),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '₹${expense.amount.toStringAsFixed(2)}',
+            style: ScrapbookStyles.marker(size: 20),
+          ),
         ],
       ),
     );
@@ -198,16 +174,20 @@ class ExpenseDetailScreen extends StatelessWidget {
 
   Widget _sectionLabel(String text) => Text(
     text,
-    style: ScrapbookStyles.marker(size: 15),
+    style: ScrapbookStyles.title(size: 48, color: ScrapbookColors.inkBrown),
   );
 
   Widget _payerRow(BuildContext context, Expense expense) {
     final isSelf = expense.payer == 'You';
-    return TornPaper(
-      color: ScrapbookColors.indexCard,
-      rotation: 0.006,
-      seed: 63,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: ScrapbookColors.inkBlack.withAlpha(200),
+          width: 1,
+        ),
+      ),
       child: Row(
         children: [
           const Icon(Icons.storefront_rounded, color: ScrapbookColors.inkBrown),
@@ -267,18 +247,12 @@ class ExpenseDetailScreen extends StatelessWidget {
     final color = paid ? ScrapbookColors.owedGreen : ScrapbookColors.inkBrown;
 
     return GestureDetector(
-      onTap: () => getIt<ExpenseService>().setParticipantPaid(
-        expense.id,
-        person,
-        !paid,
-      ),
-      child: TornPaper(
-        color: paid
-            ? ScrapbookColors.owedGreen.withValues(alpha: 0.16)
-            : ScrapbookColors.receiptWhite,
-        rotation: 0,
-        seed: person.hashCode,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      onTap: () =>
+          getIt<ExpenseService>().setParticipantPaid(expense.id, person, !paid),
+      child: Container(
+        padding: const EdgeInsets.all(12.0),
+
+        color: ScrapbookColors.indexCard.withAlpha(1),
         child: Row(
           children: [
             Icon(

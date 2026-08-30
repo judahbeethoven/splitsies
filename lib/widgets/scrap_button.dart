@@ -3,9 +3,6 @@ import 'package:splitsies/scrapbook_theme/styles.dart';
 import 'package:splitsies/scrapbook_theme/tape.dart';
 import 'package:splitsies/scrapbook_theme/torn_note.dart';
 
-/// A tactile "paper tab" button: a torn scrap held down by a strip of washi
-/// tape, that presses in when you tap it. Purely presentational — hand it an
-/// [onPressed].
 class ScrapButton extends StatefulWidget {
   final String label;
   final IconData? icon;
@@ -16,6 +13,7 @@ class ScrapButton extends StatefulWidget {
   final double rotation;
   final int seed;
   final bool dense;
+  final double maxTapeWidth;
 
   const ScrapButton({
     super.key,
@@ -28,6 +26,7 @@ class ScrapButton extends StatefulWidget {
     this.rotation = -0.02,
     this.seed = 1,
     this.dense = false,
+    this.maxTapeWidth = 110,
   });
 
   @override
@@ -36,9 +35,35 @@ class ScrapButton extends StatefulWidget {
 
 class _ScrapButtonState extends State<ScrapButton> {
   bool _down = false;
+  final GlobalKey _tabKey = GlobalKey();
+  double? _tabWidth;
 
   void _set(bool v) {
     if (mounted) setState(() => _down = v);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(_measure);
+  }
+
+  @override
+  void didUpdateWidget(covariant ScrapButton old) {
+    super.didUpdateWidget(old);
+    if (old.label != widget.label ||
+        old.icon != widget.icon ||
+        old.dense != widget.dense) {
+      WidgetsBinding.instance.addPostFrameCallback(_measure);
+    }
+  }
+
+  void _measure(Duration _) {
+    final width =
+        (_tabKey.currentContext?.findRenderObject() as RenderBox?)?.size.width;
+    if (width != null && width != _tabWidth && mounted) {
+      setState(() => _tabWidth = width);
+    }
   }
 
   @override
@@ -49,6 +74,7 @@ class _ScrapButtonState extends State<ScrapButton> {
         : const EdgeInsets.fromLTRB(22, 12, 22, 14);
 
     final tab = TornPaper(
+      key: _tabKey,
       color: widget.color,
       rotation: widget.rotation,
       seed: widget.seed,
@@ -71,6 +97,11 @@ class _ScrapButtonState extends State<ScrapButton> {
         ],
       ),
     );
+
+    final fallback = widget.dense ? 60.0 : 78.0;
+    final tapeWidth = _tabWidth == null
+        ? fallback
+        : (_tabWidth! * 0.6).clamp(36.0, widget.maxTapeWidth);
 
     return Semantics(
       button: true,
@@ -97,8 +128,8 @@ class _ScrapButtonState extends State<ScrapButton> {
                   child: WashiTape(
                     color: widget.tapeColor,
                     pattern: widget.tapePattern,
-                    width: widget.dense ? 60 : 78,
-                    height: 20,
+                    width: tapeWidth,
+                    height: widget.dense ? 16 : 20,
                     rotation: 0.06,
                     seed: widget.seed + 3,
                   ),

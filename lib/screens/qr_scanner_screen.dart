@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:splitsies/scrapbook_theme/styles.dart';
 
-/// Full-screen camera scanner. Pops with the raw decoded string from the
-/// first QR it sees, or `null` if the user backs out.
-///
-/// Used for the payer's "scan the vendor's QR" flow — this is a real
-/// physical QR (not one Splitsies generated), so we read whatever's on it
-/// and hand the raw payload back to the caller to interpret.
 class QrScannerScreen extends StatefulWidget {
   const QrScannerScreen({super.key});
 
@@ -38,13 +32,15 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            MobileScanner(controller: _controller, onDetect: _onDetect),
-            IgnorePointer(
-              child: Center(
-                child: Container(
+        child: MobileScanner(
+          controller: _controller,
+          onDetect: _onDetect,
+          overlayBuilder: (context, constraints) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: 10,
+              children: [
+                Container(
                   width: 240,
                   height: 240,
                   decoration: BoxDecoration(
@@ -55,22 +51,16 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-              ),
-            ),
-            Positioned(
-              bottom: 40,
-              left: 24,
-              right: 24,
-              child: Text(
-                "line up the vendor's UPI QR inside the frame",
-                textAlign: TextAlign.center,
-                style: ScrapbookStyles.typewriter(
-                  size: 12,
-                  color: Colors.white,
+                Text(
+                  "SHOW ME THE QR!!!",
+                  style: ScrapbookStyles.typewriter(
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

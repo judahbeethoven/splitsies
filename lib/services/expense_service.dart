@@ -22,10 +22,6 @@ class ExpenseService {
     return expenses$.map((event) => SplitCalculator.balances(event));
   }
 
-  Stream<List<Settlement>> get settlements$ {
-    return expenses$.map((event) => SplitCalculator.settleUp(event));
-  }
-
   Stream<int> get peopleCount$ {
     return expenses$.map((event) => event.length);
   }

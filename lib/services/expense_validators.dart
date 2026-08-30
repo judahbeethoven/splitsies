@@ -1,8 +1,3 @@
-/// Input sanitisation for the add-expense form.
-///
-/// Every method returns `null` when the value is acceptable and an error
-/// string otherwise — the exact shape Flutter's `TextFormField.validator`
-/// wants, and easy to surface manually for the non-text fields.
 class ExpenseValidators {
   const ExpenseValidators._();
 
@@ -22,21 +17,21 @@ class ExpenseValidators {
 
     final n = double.tryParse(raw);
     if (n == null || n.isNaN || n.isInfinite) return 'Enter a valid number';
-    if (n <= 0) return 'Amount must be greater than zero';
-    if (_decimalPlaces(raw) > 2) return 'Use at most two decimal places';
-    if (n > 10000000) return 'That seems too large';
+    if (n <= 0) return 'ITS FREE???!';
+    if (_decimalPlaces(raw) > 2) return '2 decimals is enough vro';
+    if (n > 10000000) return 'Calm down Elon';
     return null;
   }
 
   static String? participants(List<String> people) {
     final cleaned = people.map((p) => p.trim()).toList();
-    if (cleaned.any((p) => p.isEmpty)) return 'Names can’t be blank';
+    if (cleaned.any((p) => p.isEmpty)) return '"I have an imaginary friend"';
     if (cleaned.length < 2) {
-      return 'Add at least two people to split between';
+      return 'Get some friends bro please';
     }
     final lowered = cleaned.map((p) => p.toLowerCase()).toList();
     if (lowered.toSet().length != lowered.length) {
-      return 'Two people have the same name';
+      return 'Put in your nicknames please, two people have a name clash';
     }
     return null;
   }
@@ -56,8 +51,6 @@ class ExpenseValidators {
     return null;
   }
 
-  /// Loose sanity check for a UPI VPA, e.g. "name@bank" — good enough to
-  /// catch empty/garbled input before it gets baked into a QR code.
   static String? upiId(String? value) {
     final raw = (value ?? '').trim();
     if (raw.isEmpty) return 'Add your UPI ID so people can pay you';
@@ -67,7 +60,6 @@ class ExpenseValidators {
     return null;
   }
 
-  /// First error across the whole form, or `null` if everything checks out.
   static String? firstError({
     required String? description,
     required String? amount,
